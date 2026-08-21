@@ -1,0 +1,1 @@
+# Mecânica DM - Validação de CPF e Emissão de JWT (Serverless)
