@@ -36,18 +36,17 @@ jobs:
     environment: prod
 
     permissions:
+      id-token: write
       contents: read
 
     steps:
       - name: Checkout do código
         uses: actions/checkout@v4
 
-      - name: Configura credenciais AWS (Learner Lab)
+      - name: Configura credenciais AWS (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
 
       - name: Setup do Node.js (CLI do Serverless Framework)
