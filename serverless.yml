@@ -1,0 +1,79 @@
+service: mecanicadm-lambda-v3
+
+frameworkVersion: "3"
+
+provider:
+  name: aws
+  runtime: python3.12
+  region: ${env:AWS_REGION, 'us-east-1'}
+  stage: ${opt:stage, 'prod'}
+
+  environment:
+    JWT_SECRET: ${ssm:/mecanicadm/${self:provider.stage}/jwt_secret}
+    JWT_ALGORITHM: HS256
+    JWT_EXPIRES_MINUTES: ${ssm:/mecanicadm/${self:provider.stage}/jwt_expires_minutes, '60'}
+    DB_HOST: ${ssm:/mecanicadm/${self:provider.stage}/db_host}
+    DB_PORT: ${ssm:/mecanicadm/${self:provider.stage}/db_port, '5432'}
+    DB_NAME: ${ssm:/mecanicadm/${self:provider.stage}/db_name}
+    DB_USER: ${ssm:/mecanicadm/${self:provider.stage}/db_user}
+    DB_PASSWORD: ${ssm:/mecanicadm/${self:provider.stage}/db_password}
+    DB_SSLMODE: ${ssm:/mecanicadm/${self:provider.stage}/db_sslmode, 'require'}
+    CORS_ALLOWED_ORIGIN: ${env:CORS_ALLOWED_ORIGIN, 'https://mecanicadm.example.com'}
+
+  vpc:
+    securityGroupIds:
+      - ${ssm:/mecanicadm/${self:provider.stage}/lambda_sg_id}
+    subnetIds:
+      - ${ssm:/mecanicadm/${self:provider.stage}/lambda_subnet_a}
+      - ${ssm:/mecanicadm/${self:provider.stage}/lambda_subnet_b}
+
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+          Resource: arn:aws:logs:*:*:*
+
+        - Effect: Allow
+          Action:
+            - ec2:CreateNetworkInterface
+            - ec2:DescribeNetworkInterfaces
+            - ec2:DeleteNetworkInterface
+          Resource: "*"
+
+        - Effect: Allow
+          Action:
+            - ssm:GetParameter
+            - ssm:GetParameters
+          Resource: arn:aws:ssm:*:*:parameter/mecanicadm/*
+
+  httpApi:
+    cors:
+      allowedOrigins:
+        - ${env:CORS_ALLOWED_ORIGIN, 'https://mecanicadm.example.com'}
+
+functions:
+  validate-cpf:
+    handler: src/handler.handler
+    description: Valida CPF, consulta a base de clientes e emite JWT para a API.
+    timeout: 15
+    memorySize: 256
+    events:
+      - httpApi:
+          path: /token
+          method: post
+
+plugins:
+  - serverless-python-requirements
+
+custom:
+  pythonRequirements:
+    dockerizePip: true
+    slim: true
+    noDeploy: []
+
+package:
+  individually: true

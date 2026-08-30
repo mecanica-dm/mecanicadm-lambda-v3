@@ -1,0 +1,21 @@
+# Dependências e artefatos
+node_modules/
+.pytest_cache/
+__pycache__/
+*.pyc
+.venv/
+
+# Artefatos do Serverless Framework
+.serverless/
+
+# Arquivos de ambiente (nunca subir credenciais)
+.env
+.env.local
+
+# IDEs
+.idea/
+.vscode/
+*.iml
+
+# SO
+.DS_Store

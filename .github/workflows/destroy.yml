@@ -1,0 +1,56 @@
+name: DESTROY - Lambda CPF/JWT (botão vermelho)
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: "Digite DESTRUIR para confirmar"
+        required: true
+        type: string
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  destroy:
+    runs-on: ubuntu-latest
+    environment: prod
+    timeout-minutes: 15
+
+    if: inputs.confirmation == 'DESTRUIR'
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configura credenciais AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
+
+      - name: Setup do Node.js (CLI do Serverless Framework)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Instala o Serverless Framework
+        run: npm ci
+
+      # Se o stack nunca foi criado, o remove falha — tratamos como OK,
+      # pois o objetivo (nada da Lambda na conta) já está satisfeito.
+      - name: Remove o stack (stage prod)
+        run: |
+          npx serverless remove --stage prod --verbose || \
+            echo "::warning::Stack não existe (provavelmente nunca foi deployed) — nada a remover."
+
+      - name: Verifica órfãos (informativo)
+        if: always()
+        run: |
+          echo "=== Funções Lambda restantes ==="
+          aws lambda list-functions \
+            --query 'Functions[?starts_with(FunctionName, `mecanicadm`)].FunctionName' \
+            --output table 2>/dev/null || true
+          echo ">>> Se aparecer algo acima, apague manualmente pelo console."
