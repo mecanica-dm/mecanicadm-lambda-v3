@@ -1,8 +1,9 @@
+import base64
 import json
 import logging
 import os
 
-from src import cpf_validator, db_client, jwt_service
+from src import db_client, document_validator, jwt_service
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -17,22 +18,22 @@ class InvalidRequestBody(ValueError):
 def handler(event: dict, context) -> dict:
     try:
         body = _parse_body(event)
-        raw_cpf = (body.get("cpf") or "").strip()
+        raw_document = (body.get("document") or body.get("cpf") or "").strip()
 
-        if not raw_cpf:
-            return _response(400, {"message": "CPF é obrigatório"})
+        if not raw_document:
+            return _response(400, {"message": "Documento (CPF/CNPJ) é obrigatório"})
 
-        if not cpf_validator.is_valid(raw_cpf):
-            return _response(422, {"message": "CPF inválido"})
+        if not document_validator.is_valid(raw_document):
+            return _response(422, {"message": "Documento (CPF/CNPJ) inválido"})
 
-        cpf_digits = cpf_validator.only_digits(raw_cpf)
+        document_digits = document_validator.only_digits(raw_document)
 
-        client = db_client.fetch_client_by_cpf(cpf_digits)
+        client = db_client.fetch_client_by_document(document_digits)
         if not client:
             return _response(404, {"message": "Cliente não encontrado"})
 
         token = jwt_service.create_token(client)
-        logger.info("Token emitido para o CPF %s", cpf_validator.mask(cpf_digits))
+        logger.info("Token emitido para o documento %s", document_validator.mask(document_digits))
 
         return _response(200, {
             "token": token,
@@ -49,7 +50,10 @@ def handler(event: dict, context) -> dict:
 
 def _parse_body(event: dict) -> dict:
     try:
-        body = json.loads(event.get("body") or "{}")
+        raw = event.get("body") or "{}"
+        if event.get("isBase64Encoded"):
+            raw = base64.b64decode(raw).decode("utf-8")
+        body = json.loads(raw)
     except json.JSONDecodeError as error:
         raise InvalidRequestBody("body não é JSON válido") from error
 

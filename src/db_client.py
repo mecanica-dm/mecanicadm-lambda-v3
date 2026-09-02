@@ -6,13 +6,13 @@ from psycopg2.extras import RealDictCursor
 _conn = None
 
 
-def fetch_client_by_cpf(cpf_digits: str) -> dict | None:
+def fetch_client_by_document(document_digits: str) -> dict | None:
     try:
         with _get_connection().cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
                 "SELECT id, name, document FROM clients "
                 "WHERE document = %s AND deleted_at IS NULL",
-                (cpf_digits,),
+                (document_digits,),
             )
             row = cursor.fetchone()
             return dict(row) if row else None
@@ -34,8 +34,8 @@ def _get_connection():
         password=os.environ["DB_PASSWORD"],
         sslmode=os.environ.get("DB_SSLMODE", "require"),
         connect_timeout=5,
-        autocommit=True,
     )
+    _conn.autocommit = True
     return _conn
 
 
