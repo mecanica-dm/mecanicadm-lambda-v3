@@ -19,7 +19,7 @@ def create_token(client: dict) -> str:
     now = datetime.now(timezone.utc)
     payload = {
         "sub": str(client.get("id", "")),
-        "cpf": client.get("document", ""),
+        "document": client.get("document", ""),
         "name": client.get("name", ""),
         "iat": now,
         "exp": now + timedelta(minutes=get_expires_minutes()),

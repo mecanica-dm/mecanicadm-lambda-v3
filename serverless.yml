@@ -4,7 +4,7 @@ frameworkVersion: "3"
 
 provider:
   name: aws
-  runtime: python3.12
+  runtime: python3.11
   region: ${env:AWS_REGION, 'us-east-1'}
   stage: ${opt:stage, 'prod'}
 
@@ -58,7 +58,7 @@ provider:
 functions:
   validate-cpf:
     handler: src/handler.handler
-    description: Valida CPF, consulta a base de clientes e emite JWT para a API.
+    description: Valida CPF/CNPJ, consulta a base de clientes e emite JWT para a API.
     timeout: 15
     memorySize: 256
     events:
