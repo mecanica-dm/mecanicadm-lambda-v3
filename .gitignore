@@ -8,6 +8,11 @@ __pycache__/
 # Artefatos do Serverless Framework
 .serverless/
 
+# Relatórios de cobertura
+coverage.xml
+.coverage
+.htmlcov/
+
 # Arquivos de ambiente (nunca subir credenciais)
 .env
 .env.local
