@@ -2,7 +2,7 @@ name: CI/CD - Lambda CPF/JWT
 
 on:
   push:
-    branches: [main]
+    branches: [main, feat/sonar]
   workflow_dispatch:
 
 concurrency:
@@ -11,6 +11,7 @@ concurrency:
 
 jobs:
   test:
+    name: Setup, Testes e Sonar
     runs-on: ubuntu-latest
     steps:
       - name: Checkout do código
@@ -29,6 +30,11 @@ jobs:
 
       - name: Executa os testes unitários
         run: pytest -v
+
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@7006c4492b2e0ee0f816d36501671557c97f5995
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   deploy:
     needs: test
