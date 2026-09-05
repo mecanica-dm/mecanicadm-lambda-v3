@@ -2,7 +2,7 @@ name: CI/CD - Lambda CPF/JWT
 
 on:
   push:
-    branches: [main, feat/coverage]
+    branches: [main]
   workflow_dispatch:
 
 concurrency:
