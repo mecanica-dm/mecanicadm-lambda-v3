@@ -44,7 +44,7 @@ No ambiente gerenciado, as configurações vêm do **AWS SSM Parameter Store**
 (namespace `mecanicadm/{stage}/`). Para desenvolvimento local, use o arquivo
 `.env.example` como referência.
 
-## Desenvolvimento local
+## Executar testes
 
 Pré-requisitos: Python 3.11+, Node.js 20+ e npm.
 
