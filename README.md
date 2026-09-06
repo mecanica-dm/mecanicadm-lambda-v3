@@ -63,14 +63,29 @@ python -m pytest -v --cov=src --cov-report=term-missing
 ## Deploy
 
 O deploy é feito pela esteira **GitHub Actions** (`.github/workflows/ci-cd.yml`)
-ao publicar na branch `main`, após passar pelos testes e análise do **SonarQube**
-(`sonar-project.properties`).
+ao publicar na branch `main`.
+
+```mermaid
+flowchart LR
+    A[Push na branch main] --> B[Job: test]
+    B --> C[Checkout do código]
+    C --> D[Setup Python]
+    D --> E[Instala dependências]
+    E --> F[Executa testes unitários com cobertura]
+    F --> G[Scan SonarQube]
+    G -->|passou nos testes| H[Job: deploy - needs test]
+    H --> I[Checkout do código]
+    I --> J[Configura credenciais AWS]
+    J --> K[Setup Node.js]
+    K --> L[Instala Serverless Framework]
+    L --> M[Deploy da função - stage prod]
+```
 
 > O GitHub Actions também possui um workflow de destruição
 > (`.github/workflows/destroy.yml`) acionável manualmente, que exige a
 > confirmação `DESTRUIR`.
 
-## Stack
+## Stack / Pré-requisitos
 
 - **AWS Lambda** + **API Gateway HTTP API**
 - **PostgreSQL** (RDS) em VPC
