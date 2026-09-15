@@ -40,7 +40,7 @@ Parameters:
     Default: disable
   CORSAllowedOrigin:
     Type: String
-    Default: "*"
+    Default: "http://localhost:3000"
 
 Resources:
   ValidateCpfFunction:
@@ -66,6 +66,12 @@ Resources:
             Path: /token
             Method: post
             ApiId: !Ref TokenHttpApi
+
+  ValidateCpfLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${ValidateCpfFunction}"
+      RetentionInDays: 7
 
   TokenHttpApi:
     Type: AWS::Serverless::HttpApi
