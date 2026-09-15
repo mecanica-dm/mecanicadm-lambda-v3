@@ -1,0 +1,86 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Description: >-
+  mecanicadm-lambda-v3 - Validacao de CPF/CNPJ e emissao de JWT.
+  Espelho do serverless.yml permitindo execucao local e deploy via AWS SAM.
+
+Globals:
+  Function:
+    Runtime: python3.11
+    Timeout: 15
+    MemorySize: 256
+    CodeUri: .
+    Handler: src.handler.handler
+
+Parameters:
+  JWTSecret:
+    Type: String
+    Default: change-me
+  JWTExpiresMinutes:
+    Type: Number
+    Default: 60
+  DBHost:
+    Type: String
+    Default: host.docker.internal
+  DBPort:
+    Type: String
+    Default: "5432"
+  DBName:
+    Type: String
+    Default: mecanicadmdb
+  DBUser:
+    Type: String
+    Default: admin
+  DBPassword:
+    Type: String
+    Default: admin
+  DBSSLMode:
+    Type: String
+    Default: disable
+  CORSAllowedOrigin:
+    Type: String
+    Default: "*"
+
+Resources:
+  ValidateCpfFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: mecanicadm-validate-cpf
+      Environment:
+        Variables:
+          JWT_SECRET: !Ref JWTSecret
+          JWT_ALGORITHM: HS256
+          JWT_EXPIRES_MINUTES: !Ref JWTExpiresMinutes
+          DB_HOST: !Ref DBHost
+          DB_PORT: !Ref DBPort
+          DB_NAME: !Ref DBName
+          DB_USER: !Ref DBUser
+          DB_PASSWORD: !Ref DBPassword
+          DB_SSLMODE: !Ref DBSSLMode
+          CORS_ALLOWED_ORIGIN: !Ref CORSAllowedOrigin
+      Events:
+        TokenApi:
+          Type: HttpApi
+          Properties:
+            Path: /token
+            Method: post
+            ApiId: !Ref TokenHttpApi
+
+  TokenHttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      StageName: local
+      CorsConfiguration:
+        AllowOrigins:
+          - !Ref CORSAllowedOrigin
+        AllowMethods:
+          - POST
+        AllowHeaders:
+          - Content-Type
+          - Authorization
+
+Outputs:
+  TokenEndpoint:
+    Description: URL do endpoint POST /token
+    Value: !Sub "https://${TokenHttpApi}.execute-api.${AWS::Region}.amazonaws.com/token"

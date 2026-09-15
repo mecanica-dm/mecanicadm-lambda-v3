@@ -1,0 +1,14 @@
+version = 0.1
+
+[default.global.parameters]
+region = "us-east-1"
+
+[default.build.parameters]
+cached = true
+parallel = true
+
+[default.local_start_api.parameters]
+host = "0.0.0.0"
+port = 3000
+warm_containers = "EAGER"
+add_host = ["host.docker.internal:host-gateway"]
