@@ -77,3 +77,7 @@ custom:
 
 package:
   individually: true
+  exclude:
+    - template.yaml
+    - samconfig.toml
+    - local/**

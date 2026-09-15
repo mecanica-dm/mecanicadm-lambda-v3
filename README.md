@@ -44,6 +44,71 @@ No ambiente gerenciado, as configurações vêm do **AWS SSM Parameter Store**
 (namespace `mecanicadm/{stage}/`). Para desenvolvimento local, use o arquivo
 `.env.example` como referência.
 
+## Executar localmente (AWS SAM CLI)
+
+A Lambda pode ser executada na sua máquina com o **AWS SAM CLI**, que usa o
+container oficial do runtime (Python 3.11) do Lambda — o mesmo comportamento de
+produção. O template `template.yaml` é o espelho do `serverless.yml`, e o
+`samconfig.toml` guarda os parâmetros da execução local.
+
+> O `serverless-offline` padrão não funciona direto aqui porque o
+> `serverless.yml` resolve `${ssm:...}` (exige credenciais AWS em tempo de
+> compile); o SAM resolve as variáveis localmente via parâmetros do template.
+
+**Pré-requisitos:** Docker ligado e AWS SAM CLI.
+```bash
+pipx install aws-sam-cli   # ou a forma que preferir
+```
+
+### Passo a passo
+
+```bash
+# 1. Banco PostgreSQL local (schema clients + cliente de demonstração)
+docker compose -f local/docker-compose.yml up -d
+
+# 2. Build do pacote (usa container para compilar as dependências p/ Linux)
+sam build --use-container
+
+# 3. Sobe a API local (HTTP API em http://localhost:3000)
+sam local start-api
+```
+
+### Testando
+
+```bash
+# CPF válido e existente no banco -> 200 + JWT
+curl -X POST http://localhost:3000/token \
+  -H 'Content-Type: application/json' \
+  -d '{"document":"529.982.247-25"}'
+
+# Sem documento -> 400 | CPF inválido -> 422 | válido sem cliente -> 404
+curl -s -X POST http://localhost:3000/token -H 'Content-Type: application/json' -d '{}'
+curl -s -X POST http://localhost:3000/token -H 'Content-Type: application/json' -d '{"document":"111.111.111-11"}'
+curl -s -X POST http://localhost:3000/token -H 'Content-Type: application/json' -d '{"document":"123.456.780/00195"}'
+```
+
+### Como funciona a conexão com o banco
+
+- O `template.yaml` expõe parâmetros (`DBHost`, `DBUser`, `DBPassword`, etc.)
+  com defaults pensados para o Docker local (`local/docker-compose.yml`:
+  `admin/admin/mecanicadmdb`).
+- O Lambda roda em um container, então `DB_HOST` aponta para
+  `host.docker.internal`. O `samconfig.toml` já registra o mapeamento
+  `--add-host host.docker.internal:host-gateway` (necessário no Linux) e o
+  `DB_SSLMODE=disable` local (o RDS real usa `require`).
+- Para apontar para outro banco, sobrescreva os parâmetros:
+  ```bash
+  sam local start-api --parameter-overrides "DBHost=meu-host DBPassword=secret"
+  ```
+
+### Opções úteis
+
+```bash
+sam local invoke ValidateCpfFunction                        # invocação direta (sem HTTP)
+sam local invoke ValidateCpfFunction --event event.json     # com evento mock
+sam deploy --guided                                         # deploys pela AWS (opcional)
+```
+
 ## Executar testes
 
 Pré-requisitos: Python 3.11+, Node.js 20+ e npm.
