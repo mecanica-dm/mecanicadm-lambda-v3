@@ -10,7 +10,7 @@ def fetch_client_by_document(document_digits: str) -> dict | None:
     try:
         with _get_connection().cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
-                "SELECT id, name, document FROM clients "
+                "SELECT id, name, email, document FROM clients "
                 "WHERE document = %s AND deleted_at IS NULL",
                 (document_digits,),
             )

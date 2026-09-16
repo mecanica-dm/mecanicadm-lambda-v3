@@ -14,7 +14,7 @@ VALUES (
     '550e8400-e29b-41d4-a716-446655440000',
     'Cliente Teste Local',
     'local@mecanicadm.com',
-    '52998224725',
+    '79013046002',
     '48999999000',
     now(), now(), null
 ) ON CONFLICT DO NOTHING;

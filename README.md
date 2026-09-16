@@ -69,9 +69,13 @@ docker compose -f local/docker-compose.yml up -d
 # 2. Build do pacote (usa container para compilar as dependências p/ Linux)
 sam build --use-container
 
-# 3. Sobe a API local (HTTP API em http://localhost:3000)
-sam local start-api
+# 3. Sobe a API local com o MESMO segredo JWT da API (HTTP em http://localhost:3000)
+sam local start-api --parameter-overrides "JWTSecret=development"
 ```
+
+> Não pule o `--parameter-overrides "JWTSecret=development"`: se a Lambda rodar
+> com o default `change-me`, os tokens emitidos serão rejeitados pela API
+> (`InvalidTokenException` → HTTP 401). Detalhes na seção abaixo.
 
 ### Testando
 
@@ -96,9 +100,9 @@ curl -s -X POST http://localhost:3000/token -H 'Content-Type: application/json' 
   `host.docker.internal`. O `samconfig.toml` já registra o mapeamento
   `--add-host host.docker.internal:host-gateway` (necessário no Linux) e o
   `DB_SSLMODE=disable` local (o RDS real usa `require`).
-- Para apontar para outro banco, sobrescreva os parâmetros:
+- Para apontar para outro banco ou segredo, sobrescreva os parâmetros:
   ```bash
-  sam local start-api --parameter-overrides "DBHost=meu-host DBPassword=secret"
+  sam local start-api --parameter-overrides "JWTSecret=development DBHost=meu-host DBPassword=secret"
   ```
 
 ### Opções úteis
